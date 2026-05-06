@@ -19,9 +19,7 @@ st.markdown("""
 ⚡ WiseWatt — Smart Grid Intelligence
 </h1>
 """, unsafe_allow_html=True)
-if not os.path.exists("data/risk_output.parquet"):
-    st.error("Data not found. Please run simulation pipeline.")
-    st.stop()
+
 
 forecast_df = pd.read_parquet("data/forecast_output.parquet")
 risk_df = pd.read_parquet("data/risk_output.parquet")
