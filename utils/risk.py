@@ -8,12 +8,8 @@ def compute_zone_risk(forecast_df, original_df):
     - Anomaly density
     """
 
-    # Only rows where predictions exist
     df = forecast_df.dropna(subset=["prediction"]).copy()
 
-    # -------------------------------
-    # Historical baseline (zone-level)
-    # -------------------------------
     hist_avg = (
         original_df
         .groupby(["zone_id", "timestamp"])["consumption"]
@@ -23,19 +19,12 @@ def compute_zone_risk(forecast_df, original_df):
         .to_dict()
     )
 
-    # -------------------------------
-    # Anomaly count per zone
-    # -------------------------------
     anomaly_count = (
         original_df[original_df["anomaly_type"] != "normal"]
         .groupby("zone_id")
         .size()
         .to_dict()
     )
-
-    # -------------------------------
-    # Step 1: Collect raw metrics
-    # -------------------------------
     results = []
 
     for zone in df["zone_id"].unique():
@@ -60,40 +49,27 @@ def compute_zone_risk(forecast_df, original_df):
 
     risk_df = pd.DataFrame(results)
 
-    # -------------------------------
-    # Step 2: Normalize signals
-    # -------------------------------
-
-    # Demand score (relative)
     risk_df["demand_score"] = (
         (risk_df["demand_ratio"] - risk_df["demand_ratio"].min()) /
         (risk_df["demand_ratio"].max() - risk_df["demand_ratio"].min() + 1e-6)
     )
 
-    # Peak score
     risk_df["peak_score"] = (
         (risk_df["peak_ratio"] - risk_df["peak_ratio"].min()) /
         (risk_df["peak_ratio"].max() - risk_df["peak_ratio"].min() + 1e-6)
     )
 
-    # Anomaly score
     risk_df["anomaly_score"] = (
         risk_df["anomaly_count"] /
         (risk_df["anomaly_count"].max() + 1e-6)
     )
 
-    # -------------------------------
-    # Step 3: Final risk score
-    # -------------------------------
     risk_df["risk_score"] = (
         0.5 * risk_df["demand_score"] +
         0.3 * risk_df["peak_score"] +
         0.2 * risk_df["anomaly_score"]
     )
 
-    # -------------------------------
-    # Step 4: Risk classification
-    # -------------------------------
     def classify(score):
         if score > 0.7:
             return "HIGH"

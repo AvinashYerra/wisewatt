@@ -11,11 +11,7 @@ def train_forecast_model(zone_df):
     ]
 
     target = "consumption"
-
-    # SORT by time
     df = df.sort_values("timestamp")
-
-    # SPLIT manually (time-based)
     split_idx = int(len(df) * 0.8)
 
     train_df = df.iloc[:split_idx]
@@ -39,18 +35,13 @@ def train_forecast_model(zone_df):
 
     print("MAE:", mean_absolute_error(y_test, preds))
 
-    # Assign predictions ONLY to test set
     df["prediction"] = None
     df.loc[test_df.index, "prediction"] = preds
 
-    # =========================================================
-    # 🔍 SHAP EXPLAINABILITY (SAFE ADD-ON)
-    # =========================================================
     try:
         import shap
         import matplotlib.pyplot as plt
 
-        # Take small sample (fast + enough for demo)
         sample_size = min(200, len(X_test))
         X_sample = X_test.sample(sample_size, random_state=42).copy()
         X_sample.rename(columns={
@@ -62,11 +53,9 @@ def train_forecast_model(zone_df):
             "is_weekend": "Weekend"
         }, inplace=True)
 
-        # TreeExplainer is faster for XGBoost
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X_sample)
 
-        # Bar summary (feature importance)
         plt.figure(figsize=(8, 5))
         shap.summary_plot(shap_values, X_sample, plot_type="bar", show=False)
         plt.xlim(0, 10)
@@ -80,6 +69,5 @@ def train_forecast_model(zone_df):
 
     except Exception as e:
         print("SHAP failed:", e)
-    # =========================================================
 
     return model, df

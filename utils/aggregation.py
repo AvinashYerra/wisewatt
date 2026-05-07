@@ -12,7 +12,6 @@ def aggregate_zone_level(df):
         .reset_index()
     )
 
-    # Create lag features at zone level
     zone_df = zone_df.sort_values(["zone_id", "timestamp"])
 
     zone_df["lag_1"] = zone_df.groupby("zone_id")["consumption"].shift(1)
